@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>我的萬能筆記</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2965/2965358.png">
+    <style>
+        :root {
+            --primary: #4285F4;
+            --bg: #f0f2f5;
+            --card-bg: #ffffff;
+            --text: #333;
+            --gray: #888;
+            --red: #ea4335;
+            --green: #34a853;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            padding: 10px;
+            color: var(--text);
+            padding-bottom: 80px; 
+        }
+        .container { max-width: 600px; margin: 0 auto; }
+        
+        .card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        
+        h2 { margin: 0 0 15px 0; font-size: 1.2rem; color: var(--primary); }
+        
+        /* 表單樣式 */
+        label { display: block; margin: 10px 0 5px; font-weight: 600; font-size: 0.9rem; }
+        input[type="text"], input[type="date"], input[type="datetime-local"], select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            box-sizing: border-box;
+            font-size: 16px; 
+            background: #fafafa;
+            margin-bottom: 5px;
+        }
+        textarea { height: 80px; resize: none; }
+        
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button.outline { background: white; border: 1px solid #ddd; color: #555; width: auto; padding: 10px 15px;}
+        button.danger { background: #fee; border: 1px solid #fab; color: var(--red); }
+        
+        /* 分類管理區 */
+        .category-row { display: flex; gap: 8px; align-items: center; }
+        .category-row select { flex-grow: 1; margin-bottom: 0; }
+        
+        /* 筆記列表樣式 */
+        .note-item {
+            background: #fff;
+            border-radius: 12px;
+            padding: 12px 15px;
+            margin-bottom: 12px;
+            border-left: 5px solid var(--primary);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            position: relative;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            transition: all 0.3s;
+        }
+
+        /* 勾選框樣式 */
+        .checkbox-wrapper {
+            margin-top: 5px;
+            min-width: 24px;
+            height: 24px;
+        }
+        .custom-checkbox {
+            width: 22px; height: 22px; cursor: pointer;
+            accent-color: var(--green); /* 勾選後的顏色 */
+        }
+
+        /* 完成後的樣式 */
+        .note-item.completed {
+            background: #f8f9fa;
+            border-left-color: #ccc;
+            opacity: 0.7;
+        }
+        .note-item.completed .note-text {
+            text-decoration: line-through;
+            color: #999;
+        }
+
+        .note-body { flex-grow: 1; }
+
+        .note-header { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 0.85rem; color: var(--gray); }
+        .tag { background: #e8f0fe; color: var(--primary); padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8rem;}
+        
+        .deadline { display: flex; align-items: center; font-size: 0.8rem;}
+        .deadline.expired { color: var(--red); font-weight: bold; }
+
+        .delete-btn {
+            background: none; color: #ccc; width: auto; padding: 0; margin: 0;
+            font-size: 1.2rem; line-height: 1;
+        }
+        .delete-btn:hover { color: var(--red); background: none; }
+
+        /* 底部導航 */
+        .tab-bar {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: white; display: flex; justify-content: space-around;
+            padding: 10px 0; border-top: 1px solid #eee; z-index: 100;
+        }
+        .tab-btn { background: none; color: #999; font-size: 0.8rem; margin: 0;}
+        .tab-btn.active { color: var(--primary); }
+        .tab-icon { display: block; font-size: 1.5rem; }
+        .page { display: none; }
+        .page.active { display: block; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="page-notes" class="page active">
+        <div class="card">
+            <h2>📝 新增記事</h2>
+            
+            <label>分類</label>
+            <div class="category-row">
+                <select id="noteCategory"></select>
+                <button class="outline" title="新增分類" onclick="addNewCategory()">➕</button>
+                <button class="outline danger" title="刪除目前分類" onclick="deleteCategory()">➖</button>
+            </div>
+
+            <label>內容</label>
+            <textarea id="noteContent" placeholder="輸入待辦事項..."></textarea>
+            
+            <label>截止日期 (選填)</label>
+            <input type="date" id="noteDeadline">
+            
+            <button onclick="addNote()">儲存記事</button>
+        </div>
+
+        <div id="notesList"></div>
+    </div>
+
+    <div id="page-calendar" class="page">
+        <div class="card">
+            <h2>📅 Google 日曆連結</h2>
+            <label>活動標題</label>
+            <input type="text" id="eventTitle" placeholder="例如：下午茶">
+            <label>開始時間</label>
+            <input type="datetime-local" id="eventStart">
+            <label>結束時間</label>
+            <input type="datetime-local" id="eventEnd">
+            <label>地點</label>
+            <input type="text" id="eventLocation">
+            <button onclick="addToGoogleCalendar()">建立活動連結 🔗</button>
+        </div>
+    </div>
+</div>
+
+<nav class="tab-bar">
+    <button class="tab-btn active" onclick="switchPage('notes')"><span class="tab-icon">📝</span>記事</button>
+    <button class="tab-btn" onclick="switchPage('calendar')"><span class="tab-icon">📅</span>活動</button>
+</nav>
+
+<script>
+    const defaultCategories = ["待辦", "工作", "生活", "購物"];
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadCategories();
+        loadNotes();
+        // 初始化時間
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        document.getElementById('eventStart').value = now.toISOString().slice(0,16);
+    });
+
+    // --- 分類管理邏輯 ---
+    function loadCategories() {
+        let cats = JSON.parse(localStorage.getItem('myCategories_v2')) || defaultCategories;
+        const select = document.getElementById('noteCategory');
+        const currentVal = select.value; // 記住當前選擇
+        
+        select.innerHTML = '';
+        cats.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c;
+            opt.innerText = c;
+            select.appendChild(opt);
+        });
+
+        if (cats.includes(currentVal)) select.value = currentVal;
+    }
+
+    function addNewCategory() {
+        const newCat = prompt("請輸入新的分類名稱：");
+        if (newCat) {
+            let cats = JSON.parse(localStorage.getItem('myCategories_v2')) || defaultCategories;
+            if (!cats.includes(newCat)) {
+                cats.push(newCat);
+                localStorage.setItem('myCategories_v2', JSON.stringify(cats));
+                loadCategories();
+                document.getElementById('noteCategory').value = newCat;
+            }
+        }
+    }
+
+    function deleteCategory() {
+        const select = document.getElementById('noteCategory');
+        const target = select.value;
+        
+        if (defaultCategories.includes(target)) {
+            alert("「" + target + "」是預設分類，無法刪除喔！");
+            return;
+        }
+
+        if (confirm("確定要刪除分類「" + target + "」嗎？")) {
+            let cats = JSON.parse(localStorage.getItem('myCategories_v2')) || defaultCategories;
+            cats = cats.filter(c => c !== target);
+            localStorage.setItem('myCategories_v2', JSON.stringify(cats));
+            loadCategories();
+        }
+    }
+
+    // --- 筆記功能邏輯 ---
+    function addNote() {
+        const category = document.getElementById('noteCategory').value;
+        const content = document.getElementById('noteContent').value;
+        const deadline = document.getElementById('noteDeadline').value;
+
+        if (!content) return alert("請輸入內容");
+
+        const note = {
+            id: Date.now(),
+            category,
+            content,
+            deadline,
+            completed: false, // 新增：完成狀態
+            createdAt: new Date().toLocaleString()
+        };
+
+        let notes = JSON.parse(localStorage.getItem('myNotes_v2')) || [];
+        notes.unshift(note);
+        localStorage.setItem('myNotes_v2', JSON.stringify(notes));
+        
+        document.getElementById('noteContent').value = '';
+        document.getElementById('noteDeadline').value = '';
+        renderNotes();
+    }
+
+    function toggleComplete(id) {
+        let notes = JSON.parse(localStorage.getItem('myNotes_v2')) || [];
+        const index = notes.findIndex(n => n.id === id);
+        if (index !== -1) {
+            notes[index].completed = !notes[index].completed; // 切換狀態
+            // 如果完成了，移到下面？目前先保持位置，只變色
+            localStorage.setItem('myNotes_v2', JSON.stringify(notes));
+            renderNotes();
+        }
+    }
+
+    function renderNotes() {
+        const list = document.getElementById('notesList');
+        const notes = JSON.parse(localStorage.getItem('myNotes_v2')) || [];
+        list.innerHTML = '';
+
+        const today = new Date().toISOString().split('T')[0];
+
+        notes.forEach(note => {
+            let deadlineHtml = '';
+            if (note.deadline && !note.completed) {
+                const isExpired = note.deadline < today;
+                const statusText = isExpired ? "⚠️ 過期" : "📅";
+                deadlineHtml = `<span class="deadline ${isExpired ? 'expired' : ''}">${statusText} ${note.deadline}</span>`;
+            }
+
+            const div = document.createElement('div');
+            // 如果已完成，加入 completed class
+            div.className = `note-item ${note.completed ? 'completed' : ''}`;
+            
+            div.innerHTML = `
+                <div class="checkbox-wrapper">
+                    <input type="checkbox" class="custom-checkbox" 
+                           ${note.completed ? 'checked' : ''} 
+                           onchange="toggleComplete(${note.id})">
+                </div>
+                <div class="note-body">
+                    <div class="note-header">
+                        <span class="tag">${note.category}</span>
+                        ${deadlineHtml}
+                    </div>
+                    <div class="note-text">${note.content}</div>
+                </div>
+                <button class="delete-btn" onclick="deleteNote(${note.id})">×</button>
+            `;
+            list.appendChild(div);
+        });
+    }
+
+    function deleteNote(id) {
+        if (confirm("刪除此記事？")) {
+            let notes = JSON.parse(localStorage.getItem('myNotes_v2')) || [];
+            notes = notes.filter(n => n.id !== id);
+            localStorage.setItem('myNotes_v2', JSON.stringify(notes));
+            renderNotes();
+        }
+    }
+
+    // --- 頁面切換與日曆 ---
+    function switchPage(pageName) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(`page-${pageName}`).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+
+    function addToGoogleCalendar() {
+        const title = document.getElementById('eventTitle').value;
+        const start = document.getElementById('eventStart').value;
+        const end = document.getElementById('eventEnd').value;
+        const location = document.getElementById('eventLocation').value;
+        if (!title || !start) return alert("請填寫標題和開始時間");
+        
+        const formatTime = (t) => t.replace(/-|:|\./g, '') + '00';
+        let url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}`;
+        url += `&dates=${formatTime(start)}/${end ? formatTime(end) : formatTime(start)}`;
+        if (location) url += `&location=${encodeURIComponent(location)}`;
+        window.open(url, '_blank');
+    }
+</script>
+</body>
+</html>
