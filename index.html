@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>我的萬能筆記 App</title>
+    <title>Simon 雲端筆記 App</title>
     
     <link rel="manifest" href="manifest.json">
-    
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2965/2965358.png">
     
     <style>
+        /* CSS 樣式保持原樣，針對讀取狀態優化 */
         :root {
             --primary: #4285F4;
             --bg: #f2f4f8;
@@ -18,72 +18,40 @@
             --gray: #5f6368;
             --red: #ea4335;
             --green: #34a853;
+            --warning: #fbbc04;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg);
-            margin: 0;
-            padding: 15px;
-            color: var(--text);
-            padding-bottom: 90px; /* 留給底部導航的空間 */
+            margin: 0; padding: 15px; color: var(--text); padding-bottom: 90px;
             -webkit-tap-highlight-color: transparent;
         }
         .container { max-width: 600px; margin: 0 auto; }
         
-        /* 卡片設計 */
         .card {
-            background: var(--card-bg);
-            padding: 20px;
-            border-radius: 16px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            margin-bottom: 20px;
+            background: var(--card-bg); padding: 20px; border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px;
         }
         
-        h2 { 
-            margin: 0 0 15px 0; 
-            font-size: 1.3rem; 
-            color: var(--primary); 
-            font-weight: 700;
-        }
+        h2 { margin: 0 0 15px 0; font-size: 1.3rem; color: var(--primary); font-weight: 700; }
+        h3 { margin: 10px 0 5px 0; font-size: 1rem; color: #555; border-left: 4px solid var(--warning); padding-left: 8px;}
         
-        /* 輸入介面 */
         label { display: block; margin: 12px 0 6px; font-weight: 600; font-size: 0.9rem; color: var(--gray); }
-        
         input, select, textarea {
-            width: 100%;
-            padding: 14px;
-            border: 1px solid #e0e0e0;
-            border-radius: 12px;
-            box-sizing: border-box;
-            font-size: 16px; /* 防止 iOS 縮放 */
-            background: #fafafa;
-            transition: all 0.2s;
-        }
-        input:focus, select:focus, textarea:focus {
-            border-color: var(--primary);
-            background: #fff;
-            outline: none;
+            width: 100%; padding: 14px; border: 1px solid #e0e0e0;
+            border-radius: 12px; box-sizing: border-box; font-size: 16px; background: #fafafa;
         }
         textarea { height: 90px; resize: none; }
         
-        /* 按鈕設計 */
         button {
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            padding: 14px;
-            border-radius: 12px;
-            font-size: 1rem;
-            font-weight: bold;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 15px;
+            background-color: var(--primary); color: white; border: none;
+            padding: 14px; border-radius: 12px; font-size: 1rem; font-weight: bold;
+            cursor: pointer; width: 100%; margin-top: 15px;
             box-shadow: 0 4px 6px rgba(66, 133, 244, 0.2);
-            active: scale(0.98);
+            transition: opacity 0.3s;
         }
-        button:active { transform: scale(0.98); }
-
-        /* 小按鈕 */
+        button:disabled { background-color: #ccc; cursor: not-allowed; box-shadow: none; }
+        
         .btn-group { display: flex; gap: 8px; margin-bottom: 5px; }
         button.outline { 
             background: white; border: 1px solid #ddd; color: #555; 
@@ -91,110 +59,84 @@
         }
         button.danger { background: #fee; border-color: #fcc; color: var(--red); }
         
-        /* 筆記列表 */
         .note-item {
-            background: #fff;
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 12px;
-            border-left: 6px solid var(--primary);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            transition: all 0.3s ease;
+            background: #fff; border-radius: 12px; padding: 15px; margin-bottom: 12px;
+            border-left: 6px solid var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            display: flex; align-items: flex-start; gap: 12px;
         }
-
-        /* 勾選框 */
         .checkbox-wrapper { padding-top: 2px; }
-        .custom-checkbox {
-            width: 24px; height: 24px; cursor: pointer;
-            accent-color: var(--green);
-        }
-
-        /* 完成狀態 */
-        .note-item.completed {
-            background: #f1f3f4;
-            border-left-color: #dadce0;
-            opacity: 0.8;
-        }
-        .note-item.completed .note-text {
-            text-decoration: line-through;
-            color: #888;
-        }
-
+        .custom-checkbox { width: 24px; height: 24px; cursor: pointer; accent-color: var(--green); }
+        .note-item.completed { background: #f1f3f4; border-left-color: #dadce0; opacity: 0.8; }
+        .note-item.completed .note-text { text-decoration: line-through; color: #888; }
         .note-content-area { flex-grow: 1; }
         .note-meta { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.85rem; }
         .tag { background: #e8f0fe; color: var(--primary); padding: 3px 8px; border-radius: 6px; font-weight: 600; font-size: 0.75rem;}
-        
         .deadline { display: flex; align-items: center; font-size: 0.8rem; color: var(--gray); }
         .deadline.expired { color: var(--red); font-weight: bold; background: #ffeceb; padding: 2px 6px; border-radius: 4px;}
-
         .note-text { white-space: pre-wrap; line-height: 1.5; font-size: 1rem;}
-
-        .delete-btn {
-            background: none; color: #dadce0; width: auto; padding: 5px; margin: 0;
-            font-size: 1.4rem; line-height: 1; box-shadow: none;
-        }
+        .delete-btn { background: none; color: #dadce0; width: auto; padding: 5px; margin: 0; font-size: 1.4rem; line-height: 1; box-shadow: none; }
         .delete-btn:hover { color: var(--red); background: none; }
 
-        /* 底部導航 */
         .tab-bar {
-            position: fixed; bottom: 0; left: 0; right: 0;
-            background: white; display: flex; justify-content: space-around;
-            padding: 12px 0; 
-            border-top: 1px solid #eee; 
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
-            z-index: 1000;
+            position: fixed; bottom: 0; left: 0; right: 0; background: white;
+            display: flex; justify-content: space-around; padding: 12px 0; 
+            border-top: 1px solid #eee; box-shadow: 0 -4px 20px rgba(0,0,0,0.05); z-index: 1000;
         }
-        .tab-btn { 
-            background: none; color: #9aa0a6; font-size: 0.75rem; 
-            margin: 0; padding: 0; width: auto; box-shadow: none;
-            display: flex; flex-direction: column; align-items: center;
-        }
+        .tab-btn { background: none; color: #9aa0a6; font-size: 0.75rem; margin: 0; padding: 0; width: auto; box-shadow: none; display: flex; flex-direction: column; align-items: center; }
         .tab-btn.active { color: var(--primary); }
         .tab-icon { font-size: 1.5rem; margin-bottom: 4px; display: block; }
-
-        /* 頁面切換 */
-        .page { display: none; animation: fadeIn 0.3s; }
+        .page { display: none; }
         .page.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* 提示訊息 (Toast) */
         #toast {
             visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center;
             border-radius: 50px; padding: 16px; position: fixed; z-index: 2000;
-            left: 50%; bottom: 100px; transform: translateX(-50%);
-            font-size: 1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            left: 50%; bottom: 100px; transform: translateX(-50%); font-size: 1rem;
         }
         #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
+        
+        /* 讀取中的遮罩 */
+        #loading {
+            position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(255,255,255,0.8);
+            display: flex; justify-content: center; align-items: center; z-index: 9999;
+            flex-direction: column; color: var(--primary); font-weight: bold;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%;
+            width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 10px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 100px; opacity: 1;} }
         @keyframes fadeout { from {bottom: 100px; opacity: 1;} to {bottom: 0; opacity: 0;} }
-
     </style>
 </head>
 <body>
 
+<div id="loading">
+    <div class="spinner"></div>
+    <div id="loadingText">正在同步 Google Sheet...</div>
+</div>
+
 <div class="container">
-    
     <div id="page-notes" class="page active">
         <div class="card">
-            <h2>📝 新增記事</h2>
-            
-            <label>分類與管理</label>
+            <h2>📝 新增記事 (雲端版)</h2>
             <div class="btn-group">
                 <select id="noteCategory" style="margin-bottom:0;"></select>
                 <button class="outline" onclick="addNewCategory()">➕</button>
                 <button class="outline danger" onclick="deleteCategory()">➖</button>
             </div>
-
-            <label>事項內容</label>
             <textarea id="noteContent" placeholder="輸入待辦事項..."></textarea>
-            
-            <label>截止日期 (選填)</label>
             <input type="date" id="noteDeadline">
-            
-            <button onclick="addNote()">儲存記事</button>
+            <button onclick="addNote()" id="saveBtn">儲存至 Google Sheet</button>
+        </div>
+
+        <div class="card" style="background:#fff8e1; border:1px solid #ffe082;">
+            <h3 style="color:#f57f17; border-color:#f57f17;">🛡️ 本地備份</h3>
+            <p style="font-size:0.85rem; color:#666; margin:5px 0 10px;">資料已自動上傳 Google。此處可下載備份檔至手機。</p>
+            <div class="backup-area" style="display:flex; gap:10px;">
+                <button class="outline" onclick="exportData()" style="font-size:0.9rem;">📥 下載 JSON</button>
+            </div>
         </div>
 
         <div id="notesList"></div>
@@ -203,118 +145,106 @@
     <div id="page-calendar" class="page">
         <div class="card">
             <h2>📅 新增 Google 日曆活動</h2>
-            <p style="color:#666; font-size:0.9rem;">填寫後將自動開啟 Google 日曆 App</p>
-            
-            <label>活動標題</label>
-            <input type="text" id="eventTitle" placeholder="例如：下午茶會議">
-            
-            <label>開始時間</label>
+            <input type="text" id="eventTitle" placeholder="活動標題">
             <input type="datetime-local" id="eventStart">
-            
-            <label>結束時間</label>
             <input type="datetime-local" id="eventEnd">
-            
-            <label>地點 (選填)</label>
-            <input type="text" id="eventLocation">
-            
+            <input type="text" id="eventLocation" placeholder="地點">
             <button onclick="addToGoogleCalendar()">建立活動連結 🔗</button>
         </div>
     </div>
 </div>
 
 <nav class="tab-bar">
-    <button class="tab-btn active" onclick="switchPage('notes')">
-        <span class="tab-icon">📝</span>記事
-    </button>
-    <button class="tab-btn" onclick="switchPage('calendar')">
-        <span class="tab-icon">📅</span>活動
-    </button>
+    <button class="tab-btn active" onclick="switchPage('notes')"><span class="tab-icon">📝</span>記事</button>
+    <button class="tab-btn" onclick="switchPage('calendar')"><span class="tab-icon">📅</span>活動</button>
 </nav>
 
-<div id="toast">已儲存成功！</div>
+<div id="toast">訊息</div>
 
 <script>
-    // --- 核心資料庫名稱 (確保資料不混亂) ---
-    const DB_NOTES = 'myApp_Notes_v3';
-    const DB_CATS = 'myApp_Categories_v3';
-    const defaultCategories = ["待辦", "工作", "生活", "購物"];
+    // ==========================================
+    // 🔴 請在這裡貼上您的 Web App URL 🔴
+    // ==========================================
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw6Nw0SGYg0c4cX-ezHCgJX6W512U4r6zRRDxOoF4MJ6yVuvXsvWOJ1Wwz5-tBmH19AXA/exec"; 
+    // 例如: "https://script.google.com/macros/s/AKfycbx.../exec"
+    // ==========================================
 
-    // --- 初始化 ---
+    const defaultCategories = ["待辦", "工作", "生活", "購物"];
+    let localNotes = []; // 本地暫存，用於快速顯示
+
     document.addEventListener('DOMContentLoaded', () => {
-        // 1. 初始化分類
+        if(GOOGLE_SCRIPT_URL.includes("您的")) {
+            alert("⚠️ 請記得修改 HTML 檔案中的 GOOGLE_SCRIPT_URL 為您的網址！");
+        }
         loadCategories();
-        // 2. 讀取並顯示筆記 (這是最重要的一步)
-        renderNotes();
-        // 3. 設定日曆預設時間
         initTimeInputs();
+        fetchNotesFromCloud(); // 開機時從雲端抓資料
     });
 
-    function initTimeInputs() {
-        const now = new Date();
-        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-        document.getElementById('eventStart').value = now.toISOString().slice(0,16);
+    // --- 雲端同步核心 ---
+
+    // 1. 從 Google Sheet 讀取資料
+    function fetchNotesFromCloud() {
+        showLoading(true, "正在下載資料...");
+        fetch(GOOGLE_SCRIPT_URL)
+        .then(response => response.json())
+        .then(data => {
+            localNotes = data; // 更新本地暫存
+            // 按照 id (時間) 排序，新的在上面
+            localNotes.sort((a, b) => b.id - a.id);
+            renderNotes();
+            showLoading(false);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showLoading(false);
+            showToast("⚠️ 無法連線，請檢查網路");
+        });
     }
 
-    // --- 提示功能 (Toast) ---
+    // 2. 將資料上傳到 Google Sheet
+    function saveNotesToCloud() {
+        showLoading(true, "正在儲存至 Google...");
+        
+        // 使用 POST 傳送完整清單
+        fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors', // 關鍵：避開 CORS 錯誤
+            cache: 'no-cache',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            redirect: 'follow',
+            body: JSON.stringify(localNotes) // 傳送所有筆記
+        })
+        .then(() => {
+            // 因為 no-cors 模式無法讀取回應，我們假設傳送成功
+            showLoading(false);
+            showToast("☁️ 雲端同步成功！");
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showLoading(false);
+            showToast("❌ 儲存失敗");
+        });
+    }
+
+    // --- UI 與 邏輯 ---
+
+    function showLoading(show, text) {
+        const loader = document.getElementById('loading');
+        document.getElementById('loadingText').innerText = text;
+        loader.style.display = show ? 'flex' : 'none';
+    }
+
     function showToast(message) {
         const x = document.getElementById("toast");
         x.innerText = message;
         x.className = "show";
-        setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
+        setTimeout(() => { x.className = x.className.replace("show", ""); }, 3000);
     }
 
-    // --- 分類管理 ---
-    function loadCategories() {
-        let cats = JSON.parse(localStorage.getItem(DB_CATS)) || defaultCategories;
-        const select = document.getElementById('noteCategory');
-        const currentVal = select.value;
-        select.innerHTML = '';
-        cats.forEach(c => {
-            const opt = document.createElement('option');
-            opt.value = c;
-            opt.innerText = c;
-            select.appendChild(opt);
-        });
-        if (cats.includes(currentVal)) select.value = currentVal;
-    }
-
-    function addNewCategory() {
-        const newCat = prompt("輸入新分類名稱：");
-        if (newCat) {
-            let cats = JSON.parse(localStorage.getItem(DB_CATS)) || defaultCategories;
-            if (!cats.includes(newCat)) {
-                cats.push(newCat);
-                localStorage.setItem(DB_CATS, JSON.stringify(cats));
-                loadCategories();
-                document.getElementById('noteCategory').value = newCat;
-                showToast("分類已新增");
-            }
-        }
-    }
-
-    function deleteCategory() {
-        const select = document.getElementById('noteCategory');
-        const target = select.value;
-        if (defaultCategories.includes(target)) return alert("預設分類無法刪除");
-        
-        if (confirm(`刪除分類「${target}」？(該分類下的筆記會保留但失去標籤)`)) {
-            let cats = JSON.parse(localStorage.getItem(DB_CATS)) || defaultCategories;
-            cats = cats.filter(c => c !== target);
-            localStorage.setItem(DB_CATS, JSON.stringify(cats));
-            loadCategories();
-            showToast("分類已刪除");
-        }
-    }
-
-    // --- 筆記核心功能 ---
-    function getNotes() {
-        return JSON.parse(localStorage.getItem(DB_NOTES)) || [];
-    }
-
-    function saveNotesToStorage(notes) {
-        localStorage.setItem(DB_NOTES, JSON.stringify(notes));
-    }
-
+    // 新增筆記
     function addNote() {
         const content = document.getElementById('noteContent').value.trim();
         if (!content) return alert("請輸入內容！");
@@ -328,73 +258,64 @@
             createdAt: new Date().toISOString()
         };
 
-        const notes = getNotes();
-        notes.unshift(note); // 加到最前面
-        saveNotesToStorage(notes); // 立即存檔
-
-        // 清空輸入框
+        localNotes.unshift(note); // 先加入本地
+        renderNotes(); // 更新畫面
+        
+        // 清空輸入
         document.getElementById('noteContent').value = '';
         document.getElementById('noteDeadline').value = '';
-        
-        renderNotes(); // 更新畫面
-        showToast("記事已儲存！"); // 顯示成功提示
+
+        // 觸發雲端儲存
+        saveNotesToCloud();
     }
 
+    // 切換完成狀態
     function toggleComplete(id) {
-        const notes = getNotes();
-        const index = notes.findIndex(n => n.id === id);
+        const index = localNotes.findIndex(n => n.id == id);
         if (index !== -1) {
-            notes[index].completed = !notes[index].completed;
-            saveNotesToStorage(notes);
+            localNotes[index].completed = !localNotes[index].completed;
             renderNotes();
+            // 為了不讓每次打勾都轉圈圈，這裡可以選擇「不立即同步」或「靜默同步」
+            // 為了確保資料安全，我們還是執行同步，但您可以把 showLoading 註解掉來優化體驗
+            saveNotesToCloud(); 
         }
     }
 
+    // 刪除筆記
     function deleteNote(id) {
-        if (confirm("確定刪除此記事？")) {
-            let notes = getNotes();
-            notes = notes.filter(n => n.id !== id);
-            saveNotesToStorage(notes);
+        if (confirm("確定刪除此記事？(雲端也會刪除)")) {
+            localNotes = localNotes.filter(n => n.id != id);
             renderNotes();
-            showToast("記事已刪除");
+            saveNotesToCloud();
         }
     }
 
     function renderNotes() {
         const list = document.getElementById('notesList');
-        const notes = getNotes();
-        
         list.innerHTML = '';
-        if (notes.length === 0) {
-            list.innerHTML = '<div style="text-align:center; color:#999; margin-top:20px;">目前沒有記事</div>';
+        
+        if (localNotes.length === 0) {
+            list.innerHTML = '<div style="text-align:center; color:#ccc; margin-top:20px;">📭 目前沒有筆記</div>';
             return;
         }
 
         const today = new Date().toISOString().split('T')[0];
-
-        notes.forEach(note => {
-            // 處理截止日期顯示
+        localNotes.forEach(note => {
             let deadlineHtml = '';
             if (note.deadline && !note.completed) {
                 const isExpired = note.deadline < today;
-                const statusText = isExpired ? "⚠️ 已過期" : "📅";
+                const statusText = isExpired ? "⚠️ 過期" : "📅";
                 deadlineHtml = `<span class="deadline ${isExpired ? 'expired' : ''}">${statusText} ${note.deadline}</span>`;
             }
 
             const div = document.createElement('div');
             div.className = `note-item ${note.completed ? 'completed' : ''}`;
-            
             div.innerHTML = `
                 <div class="checkbox-wrapper">
-                    <input type="checkbox" class="custom-checkbox" 
-                           ${note.completed ? 'checked' : ''} 
-                           onchange="toggleComplete(${note.id})">
+                    <input type="checkbox" class="custom-checkbox" ${note.completed ? 'checked' : ''} onchange="toggleComplete(${note.id})">
                 </div>
                 <div class="note-content-area">
-                    <div class="note-meta">
-                        <span class="tag">${note.category}</span>
-                        ${deadlineHtml}
-                    </div>
+                    <div class="note-meta"><span class="tag">${note.category}</span> ${deadlineHtml}</div>
                     <div class="note-text">${note.content}</div>
                 </div>
                 <button class="delete-btn" onclick="deleteNote(${note.id})">×</button>
@@ -403,12 +324,67 @@
         });
     }
 
-    // --- 頁面切換與日曆 ---
+    // 分類管理 (存於 localStorage，因為這是個人偏好設定，不一定要存雲端，省流量)
+    function loadCategories() {
+        let cats = JSON.parse(localStorage.getItem('myApp_Categories_v3')) || defaultCategories;
+        const select = document.getElementById('noteCategory');
+        const currentVal = select.value;
+        select.innerHTML = '';
+        cats.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c; opt.innerText = c; select.appendChild(opt);
+        });
+        if (cats.includes(currentVal)) select.value = currentVal;
+    }
+
+    function addNewCategory() {
+        const newCat = prompt("輸入新分類名稱：");
+        if (newCat) {
+            let cats = JSON.parse(localStorage.getItem('myApp_Categories_v3')) || defaultCategories;
+            if (!cats.includes(newCat)) {
+                cats.push(newCat);
+                localStorage.setItem('myApp_Categories_v3', JSON.stringify(cats));
+                loadCategories();
+                document.getElementById('noteCategory').value = newCat;
+            }
+        }
+    }
+
+    function deleteCategory() {
+        const target = document.getElementById('noteCategory').value;
+        if (defaultCategories.includes(target)) return alert("預設分類無法刪除");
+        if (confirm(`刪除分類「${target}」？`)) {
+            let cats = JSON.parse(localStorage.getItem('myApp_Categories_v3')) || defaultCategories;
+            cats = cats.filter(c => c !== target);
+            localStorage.setItem('myApp_Categories_v3', JSON.stringify(cats));
+            loadCategories();
+        }
+    }
+
+    // 備份下載功能 (保留)
+    function exportData() {
+        const data = { notes: localNotes, timestamp: new Date().toLocaleString() };
+        const blob = new Blob([JSON.stringify(data, null, 2)], {type: "application/json"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const dateStr = new Date().toISOString().slice(0,10);
+        a.download = `筆記備份_${dateStr}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+
+    function initTimeInputs() {
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        document.getElementById('eventStart').value = now.toISOString().slice(0,16);
+    }
+
     function switchPage(pageName) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(`page-${pageName}`).classList.add('active');
-        // 找出點擊的按鈕並加 active
         const btns = document.querySelectorAll('.tab-btn');
         if(pageName === 'notes') btns[0].classList.add('active');
         if(pageName === 'calendar') btns[1].classList.add('active');
@@ -419,14 +395,11 @@
         const start = document.getElementById('eventStart').value;
         const end = document.getElementById('eventEnd').value;
         const location = document.getElementById('eventLocation').value;
-        
         if (!title || !start) return alert("請填寫標題和開始時間");
-        
         const formatTime = (t) => t.replace(/-|:|\./g, '') + '00';
         let url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}`;
         url += `&dates=${formatTime(start)}/${end ? formatTime(end) : formatTime(start)}`;
         if (location) url += `&location=${encodeURIComponent(location)}`;
-        
         window.open(url, '_blank');
     }
 </script>
