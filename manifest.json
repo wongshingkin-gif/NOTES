@@ -7,15 +7,16 @@
   "theme_color": "#4285F4",
   "icons": [
     {
-      "src": "Simonnote.png",
+      "src": "Simonnote2.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "Simonnote.png",
+      "src": "Simonnote2.png",
       "sizes": "512x512",
       "type": "image/png"
     }
   ]
 
 }
+
