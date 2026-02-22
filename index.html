@@ -23,7 +23,7 @@
         h2 { margin: 0 0 15px 0; font-size: 1.3rem; color: var(--primary); font-weight: 700; }
         
         label { display: block; margin: 12px 0 6px; font-weight: 600; font-size: 0.9rem; color: var(--gray); }
-        input, select, textarea {
+        input[type="text"], input[type="datetime-local"], select, textarea {
             width: 100%; padding: 12px; border: 1px solid #e0e0e0;
             border-radius: 12px; box-sizing: border-box; font-size: 16px; background: #fafafa;
         }
@@ -38,36 +38,51 @@
         button.outline { background: white; border: 1px solid #ddd; color: #555; width: auto; padding: 10px 15px; margin-top: 0; box-shadow: none; }
         button.danger { background: #fee; border-color: #fcc; color: var(--red); }
         
-        /* 圖片上傳按鈕樣式 */
+        /* 圖片上傳 */
         .file-upload-wrapper { position: relative; overflow: hidden; display: inline-block; width: 100%; margin-top:5px;}
         .file-upload-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; height: 100%; }
         .file-upload-btn { background: #e8f0fe; color: var(--primary); border: 1px dashed var(--primary); box-shadow: none; margin-top: 0; display: flex; align-items: center; justify-content: center; gap: 8px;}
         #imagePreview { max-width: 100%; border-radius: 8px; margin-top: 10px; display: none; }
 
+        /* 搜尋與篩選區塊 */
+        .search-box { margin-bottom: 15px; }
+        .filter-container { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; margin-bottom: 15px; }
+        .filter-label { 
+            display: flex; align-items: center; gap: 5px; font-size: 0.85rem; 
+            background: #fff; padding: 6px 12px; border-radius: 20px; 
+            border: 1px solid #ddd; white-space: nowrap; cursor: pointer;
+        }
+        .filter-label input { width: auto; margin: 0; }
+
+        /* 筆記列表 (摺疊設計) */
         .note-item {
             background: #fff; border-radius: 12px; padding: 15px; margin-bottom: 12px;
             border-left: 6px solid var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            display: flex; align-items: flex-start; gap: 12px; flex-direction: column;
+            display: flex; flex-direction: column; transition: all 0.3s ease;
         }
-        .note-header { display: flex; align-items: flex-start; gap: 12px; width: 100%; }
-        .custom-checkbox { width: 24px; height: 24px; cursor: pointer; accent-color: var(--green); margin-top: 2px;}
-        .note-content-area { flex-grow: 1; width: 100%; }
         
-        .note-title-display { font-size: 1.1rem; font-weight: bold; margin-bottom: 4px; color: var(--text); }
+        /* 標題列 (永遠顯示) */
+        .note-summary { display: flex; align-items: center; gap: 12px; cursor: pointer; width: 100%; }
+        .custom-checkbox { width: 24px; height: 24px; cursor: pointer; accent-color: var(--green); flex-shrink: 0;}
+        .note-title-info { flex-grow: 1; overflow: hidden; }
+        .note-title-text { font-size: 1.1rem; font-weight: bold; color: var(--text); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .note-meta { display: flex; gap: 8px; align-items: center; font-size: 0.8rem; }
+        .tag { background: #e8f0fe; color: var(--primary); padding: 2px 6px; border-radius: 4px; font-weight: 600;}
+        .deadline { color: var(--gray); }
+        .deadline.expired { color: var(--red); font-weight: bold; background: #ffeceb; padding: 2px 4px; border-radius: 4px;}
+        .expand-icon { color: #aaa; font-size: 0.9rem; transition: transform 0.3s; }
+
+        /* 詳細內容區塊 (展開後顯示) */
+        .note-details { margin-top: 15px; padding-top: 15px; border-top: 1px dashed #eee; display: none; }
         .note-text { white-space: pre-wrap; line-height: 1.5; font-size: 0.95rem; color: #444;}
         .note-img { max-width: 100%; border-radius: 8px; margin-top: 10px; display: block; border: 1px solid #eee;}
+        .delete-btn { background: #fee; color: var(--red); width: auto; padding: 8px 15px; margin-top: 15px; font-size: 0.9rem; box-shadow: none; border-radius: 8px;}
 
-        .note-item.completed { background: #f1f3f4; border-left-color: #dadce0; opacity: 0.8; }
-        .note-item.completed .note-title-display, .note-item.completed .note-text { text-decoration: line-through; color: #888; }
-        
-        .note-meta { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.85rem; }
-        .tag { background: #e8f0fe; color: var(--primary); padding: 3px 8px; border-radius: 6px; font-weight: 600; font-size: 0.75rem;}
-        .deadline { display: flex; align-items: center; font-size: 0.8rem; color: var(--gray); }
-        .deadline.expired { color: var(--red); font-weight: bold; background: #ffeceb; padding: 2px 6px; border-radius: 4px;}
-        
-        .delete-btn { background: none; color: #dadce0; width: auto; padding: 5px; margin: 0; font-size: 1.4rem; box-shadow: none; align-self: flex-start;}
-        .delete-btn:hover { color: var(--red); background: none; }
+        /* 完成狀態 */
+        .note-item.completed { background: #f8f9fa; border-left-color: #dadce0; opacity: 0.8; }
+        .note-item.completed .note-title-text, .note-item.completed .note-text { text-decoration: line-through; color: #888; }
 
+        /* 底部導航 */
         .tab-bar { position: fixed; bottom: 0; left: 0; right: 0; background: white; display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #eee; box-shadow: 0 -4px 20px rgba(0,0,0,0.05); z-index: 1000; }
         .tab-btn { background: none; color: #9aa0a6; font-size: 0.75rem; margin: 0; padding: 0; width: auto; box-shadow: none; display: flex; flex-direction: column; align-items: center; }
         .tab-btn.active { color: var(--primary); }
@@ -78,23 +93,19 @@
         #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
         #loading { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(255,255,255,0.8); display: flex; justify-content: center; align-items: center; z-index: 9999; flex-direction: column; color: var(--primary); font-weight: bold; }
         .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 10px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
         @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 100px; opacity: 1;} }
         @keyframes fadeout { from {bottom: 100px; opacity: 1;} to {bottom: 0; opacity: 0;} }
     </style>
 </head>
 <body>
 
-<div id="loading">
-    <div class="spinner"></div>
-    <div id="loadingText">載入中...</div>
-</div>
+<div id="loading"><div class="spinner"></div><div id="loadingText">載入中...</div></div>
 
 <div class="container">
     <div id="page-notes" class="page active">
         <div class="card">
             <h2>📝 新增記事</h2>
-            
             <div class="btn-group">
                 <select id="noteCategory" style="margin-bottom:0;"></select>
                 <button class="outline" onclick="addNewCategory()">➕</button>
@@ -102,7 +113,7 @@
             </div>
             
             <label>標題</label>
-            <input type="text" id="noteTitle" placeholder="例如：購買辦公用品">
+            <input type="text" id="noteTitle" placeholder="例如：開會準備資料">
 
             <label>內容詳情</label>
             <textarea id="noteContent" placeholder="輸入詳細事項..."></textarea>
@@ -115,11 +126,17 @@
             <img id="imagePreview" src="" alt="圖片預覽">
             <input type="hidden" id="imageBase64" value="">
 
-            <label>截止日期 (選填)</label>
-            <input type="date" id="noteDeadline">
+            <label>截止時間 (日期與時間)</label>
+            <input type="datetime-local" id="noteDeadline">
             
             <button onclick="addNote()">儲存至雲端</button>
         </div>
+
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="🔍 搜尋標題或內容..." onkeyup="renderNotes()">
+        </div>
+        <div class="filter-container" id="filterContainer">
+            </div>
 
         <div id="notesList"></div>
     </div>
@@ -147,11 +164,12 @@
     // ==========================================
     // 🔴 請在這裡貼上您的 Web App URL 🔴
     // ==========================================
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx0_-sGwmBirMC6I6XQh45LvPrOqx3_zZMGCNTWWnJHIevEc48_oZi36xRtMxYimT30/exec"; 
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwbtHykuURH-Yvhxmfv61SLEfv2LD1qdt0Y6Ls4qRlEajEwn3HBUSKSqNfR3vYy_uMcXQ/exec"; 
     // ==========================================
 
     const defaultCategories = ["待辦", "工作", "生活", "購物"];
     let localNotes = []; 
+    let expandedNotes = new Set(); // 記錄哪些筆記被展開了
 
     document.addEventListener('DOMContentLoaded', () => {
         loadCategories();
@@ -173,45 +191,30 @@
     }
 
     function saveNotesToCloud() {
-        showLoading(true, "儲存至雲端...");
         fetch(GOOGLE_SCRIPT_URL, {
             method: 'POST', mode: 'no-cors', cache: 'no-cache',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(localNotes) 
         }).then(() => {
-            showLoading(false); showToast("☁️ 雲端同步成功！");
-        }).catch(error => { showLoading(false); showToast("❌ 儲存失敗"); });
+            showToast("☁️ 雲端同步成功！");
+        }).catch(error => { showToast("❌ 儲存失敗"); });
     }
 
-    // --- 圖片壓縮處理 ---
     function previewImage(event) {
         const file = event.target.files[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.onload = function(e) {
             const img = new Image();
             img.onload = function() {
-                // 壓縮圖片大小，避免塞爆 Google Sheet
                 const canvas = document.createElement('canvas');
                 const MAX_WIDTH = 500; 
-                let width = img.width;
-                let height = img.height;
-
-                if (width > MAX_WIDTH) {
-                    height = height * (MAX_WIDTH / width);
-                    width = MAX_WIDTH;
-                }
-                canvas.width = width;
-                canvas.height = height;
-                
+                let width = img.width, height = img.height;
+                if (width > MAX_WIDTH) { height = height * (MAX_WIDTH / width); width = MAX_WIDTH; }
+                canvas.width = width; canvas.height = height;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
-                
-                // 轉為 Base64 (0.6 代表壓縮品質，降低檔案大小)
                 const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
-                
-                // 顯示預覽並存入隱藏欄位
                 document.getElementById('imagePreview').src = dataUrl;
                 document.getElementById('imagePreview').style.display = 'block';
                 document.getElementById('imageBase64').value = dataUrl;
@@ -221,21 +224,19 @@
         reader.readAsDataURL(file);
     }
 
-    // --- 新增筆記 (加入標題與圖片) ---
     function addNote() {
         const title = document.getElementById('noteTitle').value.trim();
         const content = document.getElementById('noteContent').value.trim();
         const imageBase64 = document.getElementById('imageBase64').value;
-        
         if (!title && !content) return alert("請至少輸入標題或內容！");
 
         const note = {
             id: Date.now(),
             category: document.getElementById('noteCategory').value,
-            title: title,
+            title: title || "(無標題)", // 如果沒寫標題，給預設值
             content: content,
-            image: imageBase64, // 存入壓縮後的圖片
-            deadline: document.getElementById('noteDeadline').value,
+            image: imageBase64,
+            deadline: document.getElementById('noteDeadline').value, // 這會包含日期與時間
             completed: false,
             createdAt: new Date().toISOString()
         };
@@ -243,18 +244,17 @@
         localNotes.unshift(note); 
         renderNotes(); 
         
-        // 清空輸入欄位
         document.getElementById('noteTitle').value = '';
         document.getElementById('noteContent').value = '';
         document.getElementById('noteDeadline').value = '';
         document.getElementById('noteImage').value = '';
         document.getElementById('imagePreview').style.display = 'none';
         document.getElementById('imageBase64').value = '';
-
         saveNotesToCloud();
     }
 
-    function toggleComplete(id) {
+    function toggleComplete(id, event) {
+        if(event) event.stopPropagation(); // 防止點擊框框時觸發展開/摺疊
         const index = localNotes.findIndex(n => n.id == id);
         if (index !== -1) {
             localNotes[index].completed = !localNotes[index].completed;
@@ -263,61 +263,124 @@
         }
     }
 
-    function deleteNote(id) {
+    function deleteNote(id, event) {
+        if(event) event.stopPropagation();
         if (confirm("確定刪除此記事？(包含圖片)")) {
             localNotes = localNotes.filter(n => n.id != id);
+            expandedNotes.delete(id); // 從展開名單移除
             renderNotes();
             saveNotesToCloud();
         }
     }
 
+    // --- 摺疊/展開邏輯 ---
+    function toggleExpand(id) {
+        if (expandedNotes.has(id)) {
+            expandedNotes.delete(id);
+        } else {
+            expandedNotes.add(id);
+        }
+        renderNotes();
+    }
+
     function renderNotes() {
         const list = document.getElementById('notesList');
-        list.innerHTML = '';
-        if (localNotes.length === 0) { list.innerHTML = '<div style="text-align:center; color:#ccc; margin-top:20px;">📭 目前沒有筆記</div>'; return; }
+        const searchText = document.getElementById('searchInput').value.toLowerCase();
+        
+        // 取得目前勾選的分類
+        const checkedCategories = Array.from(document.querySelectorAll('.cat-filter-chk:checked')).map(cb => cb.value);
 
-        const today = new Date().toISOString().split('T')[0];
-        localNotes.forEach(note => {
+        list.innerHTML = '';
+
+        // 過濾筆記 (根據搜尋文字與勾選的分類)
+        const filteredNotes = localNotes.filter(note => {
+            const matchSearch = (note.title && note.title.toLowerCase().includes(searchText)) || 
+                                (note.content && note.content.toLowerCase().includes(searchText));
+            const matchCategory = checkedCategories.length === 0 || checkedCategories.includes(note.category);
+            return matchSearch && matchCategory;
+        });
+
+        if (filteredNotes.length === 0) { 
+            list.innerHTML = '<div style="text-align:center; color:#ccc; margin-top:20px;">📭 找不到符合的筆記</div>'; 
+            return; 
+        }
+
+        const nowFormat = new Date().toISOString().slice(0,16); // 用來判斷過期(精確到分)
+        
+        filteredNotes.forEach(note => {
             let deadlineHtml = '';
             if (note.deadline && !note.completed) {
-                const isExpired = note.deadline < today;
-                deadlineHtml = `<span class="deadline ${isExpired ? 'expired' : ''}">${isExpired ? "⚠️ 過期" : "📅"} ${note.deadline}</span>`;
+                // 將 ISO 字串中的 T 換成空白以利閱讀，如 2024-05-20 15:30
+                const displayTime = note.deadline.replace('T', ' ');
+                const isExpired = note.deadline < nowFormat;
+                deadlineHtml = `<span class="deadline ${isExpired ? 'expired' : ''}">${isExpired ? "⚠️" : "🕒"} ${displayTime}</span>`;
             }
 
-            // 處理是否有圖片和標題
-            const titleHtml = note.title ? `<div class="note-title-display">${note.title}</div>` : '';
-            const imgHtml = note.image ? `<img src="${note.image}" class="note-img" alt="附加圖片">` : '';
+            const imgHtml = note.image ? `<img src="${note.image}" class="note-img">` : '';
+            const isExpanded = expandedNotes.has(note.id);
 
             const div = document.createElement('div');
             div.className = `note-item ${note.completed ? 'completed' : ''}`;
+            
+            // 點擊 Summary 區域即可觸發 toggleExpand
             div.innerHTML = `
-                <div class="note-header">
-                    <input type="checkbox" class="custom-checkbox" ${note.completed ? 'checked' : ''} onchange="toggleComplete(${note.id})">
-                    <div class="note-content-area">
-                        <div class="note-meta"><span class="tag">${note.category}</span> ${deadlineHtml}</div>
-                        ${titleHtml}
-                        <div class="note-text">${note.content}</div>
-                        ${imgHtml}
+                <div class="note-summary" onclick="toggleExpand(${note.id})">
+                    <input type="checkbox" class="custom-checkbox" ${note.completed ? 'checked' : ''} onclick="toggleComplete(${note.id}, event)">
+                    <div class="note-title-info">
+                        <div class="note-title-text">${note.title || "(無標題)"}</div>
+                        <div class="note-meta">
+                            <span class="tag">${note.category}</span>
+                            ${deadlineHtml}
+                        </div>
                     </div>
-                    <button class="delete-btn" onclick="deleteNote(${note.id})">×</button>
+                    <div class="expand-icon">${isExpanded ? '▲' : '▼'}</div>
+                </div>
+
+                <div class="note-details" style="display: ${isExpanded ? 'block' : 'none'};">
+                    <div class="note-text">${note.content || "沒有詳細內容"}</div>
+                    ${imgHtml}
+                    <button class="delete-btn" onclick="deleteNote(${note.id}, event)">🗑️ 刪除筆記</button>
                 </div>
             `;
             list.appendChild(div);
         });
     }
 
+    // --- 分類與篩選介面渲染 ---
     function loadCategories() {
         let cats = JSON.parse(localStorage.getItem('myApp_Categories_v3')) || defaultCategories;
         const select = document.getElementById('noteCategory');
-        const currentVal = select.value; select.innerHTML = '';
-        cats.forEach(c => { const opt = document.createElement('option'); opt.value = c; opt.innerText = c; select.appendChild(opt); });
+        const currentVal = select.value; 
+        select.innerHTML = '';
+        cats.forEach(c => { 
+            const opt = document.createElement('option'); opt.value = c; opt.innerText = c; select.appendChild(opt); 
+        });
         if (cats.includes(currentVal)) select.value = currentVal;
+
+        renderCategoryFilter(cats); // 重新繪製篩選區塊
     }
+
+    function renderCategoryFilter(cats) {
+        const container = document.getElementById('filterContainer');
+        container.innerHTML = '';
+        cats.forEach(c => {
+            const label = document.createElement('label');
+            label.className = 'filter-label';
+            label.innerHTML = `<input type="checkbox" class="cat-filter-chk" value="${c}" onchange="renderNotes()"> ${c}`;
+            container.appendChild(label);
+        });
+    }
+
     function addNewCategory() {
         const newCat = prompt("輸入新分類名稱：");
         if (newCat) {
             let cats = JSON.parse(localStorage.getItem('myApp_Categories_v3')) || defaultCategories;
-            if (!cats.includes(newCat)) { cats.push(newCat); localStorage.setItem('myApp_Categories_v3', JSON.stringify(cats)); loadCategories(); document.getElementById('noteCategory').value = newCat; }
+            if (!cats.includes(newCat)) { 
+                cats.push(newCat); 
+                localStorage.setItem('myApp_Categories_v3', JSON.stringify(cats)); 
+                loadCategories(); 
+                document.getElementById('noteCategory').value = newCat; 
+            }
         }
     }
     function deleteCategory() {
@@ -325,11 +388,17 @@
         if (defaultCategories.includes(target)) return alert("預設分類無法刪除");
         if (confirm(`刪除分類「${target}」？`)) {
             let cats = JSON.parse(localStorage.getItem('myApp_Categories_v3')) || defaultCategories;
-            cats = cats.filter(c => c !== target); localStorage.setItem('myApp_Categories_v3', JSON.stringify(cats)); loadCategories();
+            cats = cats.filter(c => c !== target); 
+            localStorage.setItem('myApp_Categories_v3', JSON.stringify(cats)); 
+            loadCategories();
         }
     }
 
-    function initTimeInputs() { const now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset()); document.getElementById('eventStart').value = now.toISOString().slice(0,16); }
+    function initTimeInputs() { 
+        const now = new Date(); 
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset()); 
+        document.getElementById('eventStart').value = now.toISOString().slice(0,16); 
+    }
     function showLoading(show, text) { document.getElementById('loading').style.display = show ? 'flex' : 'none'; document.getElementById('loadingText').innerText = text; }
     function showToast(message) { const x = document.getElementById("toast"); x.innerText = message; x.className = "show"; setTimeout(() => { x.className = x.className.replace("show", ""); }, 3000); }
     function switchPage(pageName) {
@@ -350,4 +419,3 @@
 </script>
 </body>
 </html>
-
