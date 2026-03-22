@@ -61,7 +61,6 @@
             display: flex; flex-direction: column; transition: all 0.3s ease;
         }
         
-        /* 標題列 (永遠顯示) */
         .note-summary { display: flex; align-items: center; gap: 12px; cursor: pointer; width: 100%; }
         .custom-checkbox { width: 24px; height: 24px; cursor: pointer; accent-color: var(--green); flex-shrink: 0;}
         .note-title-info { flex-grow: 1; overflow: hidden; }
@@ -72,11 +71,14 @@
         .deadline.expired { color: var(--red); font-weight: bold; background: #ffeceb; padding: 2px 4px; border-radius: 4px;}
         .expand-icon { color: #aaa; font-size: 0.9rem; transition: transform 0.3s; }
 
-        /* 詳細內容區塊 (展開後顯示) */
+        /* 詳細內容區塊 */
         .note-details { margin-top: 15px; padding-top: 15px; border-top: 1px dashed #eee; display: none; }
         .note-text { white-space: pre-wrap; line-height: 1.5; font-size: 0.95rem; color: #444;}
         .note-img { max-width: 100%; border-radius: 8px; margin-top: 10px; display: block; border: 1px solid #eee;}
-        .delete-btn { background: #fee; color: var(--red); width: auto; padding: 8px 15px; margin-top: 15px; font-size: 0.9rem; box-shadow: none; border-radius: 8px;}
+        
+        .action-buttons { display: flex; gap: 10px; margin-top: 15px; }
+        .action-btn { background: #f1f3f4; color: #555; width: auto; padding: 8px 15px; font-size: 0.9rem; box-shadow: none; border-radius: 8px; flex-grow: 1;}
+        .delete-btn { background: #fee; color: var(--red); }
 
         /* 完成狀態 */
         .note-item.completed { background: #f8f9fa; border-left-color: #dadce0; opacity: 0.8; }
@@ -135,8 +137,7 @@
         <div class="search-box">
             <input type="text" id="searchInput" placeholder="🔍 搜尋標題或內容..." onkeyup="renderNotes()">
         </div>
-        <div class="filter-container" id="filterContainer">
-            </div>
+        <div class="filter-container" id="filterContainer"></div>
 
         <div id="notesList"></div>
     </div>
@@ -169,14 +170,64 @@
 
     const defaultCategories = ["待辦", "工作", "生活", "購物"];
     let localNotes = []; 
-    let expandedNotes = new Set(); // 記錄哪些筆記被展開了
+    let expandedNotes = new Set(); 
+    let notifiedTasks = new Set(); // 記錄已經通知過的事項，避免重複吵人
 
     document.addEventListener('DOMContentLoaded', () => {
         loadCategories();
         initTimeInputs();
         fetchNotesFromCloud(); 
+        
+        // 要求瀏覽器通知權限
+        if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
+            Notification.requestPermission();
+        }
+
+        // 啟動定時檢查 (每 1 分鐘檢查一次是否有快到期的項目)
+        setInterval(checkUpcomingDeadlines, 60000);
     });
 
+    // --- 自動到期提醒邏輯 ---
+    function checkUpcomingDeadlines() {
+        const now = new Date();
+        localNotes.forEach(note => {
+            if (note.deadline && !note.completed) {
+                const deadlineDate = new Date(note.deadline);
+                const diffMs = deadlineDate - now;
+                const diffMinutes = Math.floor(diffMs / 60000);
+
+                // 如果在 60 分鐘內即將到期，且尚未通知過
+                if (diffMinutes >= 0 && diffMinutes <= 60 && !notifiedTasks.has(note.id)) {
+                    notifiedTasks.add(note.id); // 標記為已通知
+                    sendNotification(`⏳ 即將到期：${note.title}`, `請注意！此事項將在 ${diffMinutes} 分鐘後到期。`);
+                }
+            }
+        });
+    }
+
+    function sendNotification(title, body) {
+        if ("Notification" in window && Notification.permission === "granted") {
+            new Notification(title, { body: body, icon: 'my-icon.png' });
+        } else {
+            // 如果沒給權限，則使用畫面上的提示框
+            showToast(`${title} - ${body}`);
+        }
+    }
+
+    // --- 將特定筆記加入原生 Google 日曆 (絕對會響的提醒) ---
+    function addNoteToCalendar(id, event) {
+        if(event) event.stopPropagation();
+        const note = localNotes.find(n => n.id == id);
+        if(!note || !note.deadline) return alert("這筆記事沒有設定截止時間喔！");
+
+        const formatTime = (t) => t.replace(/-|:|\./g, '') + '00';
+        const start = formatTime(note.deadline);
+        // 設定結束時間為開始後的一小時
+        let url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(note.title)}&details=${encodeURIComponent(note.content)}&dates=${start}/${start}`;
+        window.open(url, '_blank');
+    }
+
+    // --- 雲端與基本邏輯 ---
     function fetchNotesFromCloud() {
         showLoading(true, "同步資料庫中...");
         fetch(GOOGLE_SCRIPT_URL)
@@ -186,6 +237,7 @@
             localNotes.sort((a, b) => b.id - a.id);
             renderNotes();
             showLoading(false);
+            checkUpcomingDeadlines(); // 載入後立刻檢查一次
         })
         .catch(error => { showLoading(false); showToast("⚠️ 無法連線"); });
     }
@@ -233,10 +285,10 @@
         const note = {
             id: Date.now(),
             category: document.getElementById('noteCategory').value,
-            title: title || "(無標題)", // 如果沒寫標題，給預設值
+            title: title || "(無標題)", 
             content: content,
             image: imageBase64,
-            deadline: document.getElementById('noteDeadline').value, // 這會包含日期與時間
+            deadline: document.getElementById('noteDeadline').value, 
             completed: false,
             createdAt: new Date().toISOString()
         };
@@ -254,7 +306,7 @@
     }
 
     function toggleComplete(id, event) {
-        if(event) event.stopPropagation(); // 防止點擊框框時觸發展開/摺疊
+        if(event) event.stopPropagation(); 
         const index = localNotes.findIndex(n => n.id == id);
         if (index !== -1) {
             localNotes[index].completed = !localNotes[index].completed;
@@ -267,32 +319,23 @@
         if(event) event.stopPropagation();
         if (confirm("確定刪除此記事？(包含圖片)")) {
             localNotes = localNotes.filter(n => n.id != id);
-            expandedNotes.delete(id); // 從展開名單移除
+            expandedNotes.delete(id); 
             renderNotes();
             saveNotesToCloud();
         }
     }
 
-    // --- 摺疊/展開邏輯 ---
     function toggleExpand(id) {
-        if (expandedNotes.has(id)) {
-            expandedNotes.delete(id);
-        } else {
-            expandedNotes.add(id);
-        }
+        if (expandedNotes.has(id)) { expandedNotes.delete(id); } else { expandedNotes.add(id); }
         renderNotes();
     }
 
     function renderNotes() {
         const list = document.getElementById('notesList');
         const searchText = document.getElementById('searchInput').value.toLowerCase();
-        
-        // 取得目前勾選的分類
         const checkedCategories = Array.from(document.querySelectorAll('.cat-filter-chk:checked')).map(cb => cb.value);
 
         list.innerHTML = '';
-
-        // 過濾筆記 (根據搜尋文字與勾選的分類)
         const filteredNotes = localNotes.filter(note => {
             const matchSearch = (note.title && note.title.toLowerCase().includes(searchText)) || 
                                 (note.content && note.content.toLowerCase().includes(searchText));
@@ -305,15 +348,19 @@
             return; 
         }
 
-        const nowFormat = new Date().toISOString().slice(0,16); // 用來判斷過期(精確到分)
+        const nowFormat = new Date().toISOString().slice(0,16); 
         
         filteredNotes.forEach(note => {
             let deadlineHtml = '';
+            let calendarBtnHtml = '';
+            
             if (note.deadline && !note.completed) {
-                // 將 ISO 字串中的 T 換成空白以利閱讀，如 2024-05-20 15:30
                 const displayTime = note.deadline.replace('T', ' ');
                 const isExpired = note.deadline < nowFormat;
                 deadlineHtml = `<span class="deadline ${isExpired ? 'expired' : ''}">${isExpired ? "⚠️" : "🕒"} ${displayTime}</span>`;
+                
+                // 如果有時間，提供「加入手機日曆」的按鈕
+                calendarBtnHtml = `<button class="action-btn" onclick="addNoteToCalendar(${note.id}, event)">🔔 設為手機鬧鐘</button>`;
             }
 
             const imgHtml = note.image ? `<img src="${note.image}" class="note-img">` : '';
@@ -322,7 +369,6 @@
             const div = document.createElement('div');
             div.className = `note-item ${note.completed ? 'completed' : ''}`;
             
-            // 點擊 Summary 區域即可觸發 toggleExpand
             div.innerHTML = `
                 <div class="note-summary" onclick="toggleExpand(${note.id})">
                     <input type="checkbox" class="custom-checkbox" ${note.completed ? 'checked' : ''} onclick="toggleComplete(${note.id}, event)">
@@ -339,33 +385,30 @@
                 <div class="note-details" style="display: ${isExpanded ? 'block' : 'none'};">
                     <div class="note-text">${note.content || "沒有詳細內容"}</div>
                     ${imgHtml}
-                    <button class="delete-btn" onclick="deleteNote(${note.id}, event)">🗑️ 刪除筆記</button>
+                    <div class="action-buttons">
+                        ${calendarBtnHtml}
+                        <button class="action-btn delete-btn" onclick="deleteNote(${note.id}, event)">🗑️ 刪除</button>
+                    </div>
                 </div>
             `;
             list.appendChild(div);
         });
     }
 
-    // --- 分類與篩選介面渲染 ---
     function loadCategories() {
         let cats = JSON.parse(localStorage.getItem('myApp_Categories_v3')) || defaultCategories;
         const select = document.getElementById('noteCategory');
-        const currentVal = select.value; 
-        select.innerHTML = '';
-        cats.forEach(c => { 
-            const opt = document.createElement('option'); opt.value = c; opt.innerText = c; select.appendChild(opt); 
-        });
+        const currentVal = select.value; select.innerHTML = '';
+        cats.forEach(c => { const opt = document.createElement('option'); opt.value = c; opt.innerText = c; select.appendChild(opt); });
         if (cats.includes(currentVal)) select.value = currentVal;
-
-        renderCategoryFilter(cats); // 重新繪製篩選區塊
+        renderCategoryFilter(cats); 
     }
 
     function renderCategoryFilter(cats) {
         const container = document.getElementById('filterContainer');
         container.innerHTML = '';
         cats.forEach(c => {
-            const label = document.createElement('label');
-            label.className = 'filter-label';
+            const label = document.createElement('label'); label.className = 'filter-label';
             label.innerHTML = `<input type="checkbox" class="cat-filter-chk" value="${c}" onchange="renderNotes()"> ${c}`;
             container.appendChild(label);
         });
@@ -375,12 +418,7 @@
         const newCat = prompt("輸入新分類名稱：");
         if (newCat) {
             let cats = JSON.parse(localStorage.getItem('myApp_Categories_v3')) || defaultCategories;
-            if (!cats.includes(newCat)) { 
-                cats.push(newCat); 
-                localStorage.setItem('myApp_Categories_v3', JSON.stringify(cats)); 
-                loadCategories(); 
-                document.getElementById('noteCategory').value = newCat; 
-            }
+            if (!cats.includes(newCat)) { cats.push(newCat); localStorage.setItem('myApp_Categories_v3', JSON.stringify(cats)); loadCategories(); document.getElementById('noteCategory').value = newCat; }
         }
     }
     function deleteCategory() {
@@ -388,17 +426,11 @@
         if (defaultCategories.includes(target)) return alert("預設分類無法刪除");
         if (confirm(`刪除分類「${target}」？`)) {
             let cats = JSON.parse(localStorage.getItem('myApp_Categories_v3')) || defaultCategories;
-            cats = cats.filter(c => c !== target); 
-            localStorage.setItem('myApp_Categories_v3', JSON.stringify(cats)); 
-            loadCategories();
+            cats = cats.filter(c => c !== target); localStorage.setItem('myApp_Categories_v3', JSON.stringify(cats)); loadCategories();
         }
     }
 
-    function initTimeInputs() { 
-        const now = new Date(); 
-        now.setMinutes(now.getMinutes() - now.getTimezoneOffset()); 
-        document.getElementById('eventStart').value = now.toISOString().slice(0,16); 
-    }
+    function initTimeInputs() { const now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset()); document.getElementById('eventStart').value = now.toISOString().slice(0,16); }
     function showLoading(show, text) { document.getElementById('loading').style.display = show ? 'flex' : 'none'; document.getElementById('loadingText').innerText = text; }
     function showToast(message) { const x = document.getElementById("toast"); x.innerText = message; x.className = "show"; setTimeout(() => { x.className = x.className.replace("show", ""); }, 3000); }
     function switchPage(pageName) {
